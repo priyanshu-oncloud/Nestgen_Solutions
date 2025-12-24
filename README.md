@@ -1,73 +1,88 @@
-# Welcome to your Lovable project
+# Nestgen Solutions 🌐
 
-## Project info
+Official website and source code for **Nestgen Solutions**, an IT Software Company focused on building modern, scalable, and reliable web solutions.
 
-**URL**: https://lovable.dev/projects/c380dbcb-61d7-4667-a7f6-9baf53b26f57
+## 🔗 Live Website
+👉 https://nestgen-solutions.web.app
 
-## How can I edit this code?
+## 📦 GitHub Repository
+👉 https://github.com/priyanshu-oncloud/Nestgen_Solutions.git
 
-There are several ways of editing your application.
+---
 
-**Use Lovable**
+## 🚀 About Nestgen Solutions
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/c380dbcb-61d7-4667-a7f6-9baf53b26f57) and start prompting.
+Nestgen Solutions is a technology-driven software company delivering high-quality web applications using modern frontend tools and best development practices.
 
-Changes made via Lovable will be committed automatically to this repo.
+We focus on:
+- Clean UI/UX
+- Scalable architecture
+- Fast performance
+- Secure and maintainable code
 
-**Use your preferred IDE**
+---
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 🛠 Tech Stack
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+This project is built using:
 
-Follow these steps:
+- **Vite**
+- **React**
+- **TypeScript**
+- **Tailwind CSS**
+- **shadcn/ui**
+- **Node.js & npm**
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+---
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## ⚙️ How to Run the Project Locally
 
-# Step 3: Install the necessary dependencies.
-npm i
+Follow these steps to start the project on your local machine:
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+### 1️⃣ Clone the Repository
+```bash
+git clone https://github.com/priyanshu-oncloud/Nestgen_Solutions.git
+```
+
+### 2️⃣ Navigate to Project Folder
+```bash
+cd Nestgen_Solutions
+```
+
+### 3️⃣ Install Dependencies
+```bash
+npm install
+```
+
+### 4️⃣ Start Development Server
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The app will start on:
+```
+http://localhost:5173
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+---
 
-**Use GitHub Codespaces**
+## 📂 Project Structure
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```
+Nestgen_Solutions/
+├── 
 
-## What technologies are used for this project?
+```
 
-This project is built with:
+---
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## 👤 Author
 
-## How can I deploy this project?
+**Priyanshu Goyal**  
+GitHub: https://github.com/priyanshu-oncloud
 
-Simply open [Lovable](https://lovable.dev/projects/c380dbcb-61d7-4667-a7f6-9baf53b26f57) and click on Share -> Publish.
+---
 
-## Can I connect a custom domain to my Lovable project?
+## 📜 License
 
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+This project is licensed under the **MIT License**.

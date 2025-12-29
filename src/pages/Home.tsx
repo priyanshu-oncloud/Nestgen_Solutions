@@ -84,6 +84,7 @@ export default function Home() {
 ];
 
   return (
+    <main>
     <div className="min-h-screen">
       {/* Hero Section */}
       <section
@@ -236,5 +237,7 @@ export default function Home() {
       </section>
 
     </div>
+    
+  </main>
   );
 }

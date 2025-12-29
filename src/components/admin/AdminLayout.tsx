@@ -2,7 +2,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { LogOut, Home, Briefcase, FolderKanban, Users, Star, MessageSquare, Settings } from "lucide-react";
 import { useAdmin } from "@/contexts/AdminContext";
-import logo from "@/assets/logo.jpeg";
+import logo from "@/assets/logo.webp";
 
 interface AdminLayoutProps {
   children: React.ReactNode;

@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import logo from "@/assets/logo.jpeg";
+import logo from "@/assets/logo.webp";
 
 const navItems = [
   { name: "Home", path: "/" },
@@ -73,7 +73,7 @@ export const Navigation = () => {
           </div>
 
           {/* Mobile Menu Button */}
-          <button
+          <button aria-label="Open menu"
             className="md:hidden p-2"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >

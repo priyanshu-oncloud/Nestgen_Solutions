@@ -8,7 +8,7 @@ import {
   Facebook,
   Instagram
 } from "lucide-react";
-import logo from "@/assets/logo.jpeg";
+import logo from "@/assets/logo.webp";
 import { useEffect, useState } from "react";
 
 import { ref, onValue } from "firebase/database";
@@ -134,22 +134,30 @@ export const Footer = () => {
 
           <div className="flex space-x-4">
             {settings.linkedin && (
-              <a href={settings.linkedin} className="text-muted-foreground hover:text-primary transition-colors" target="_blank">
+              <a href={settings.linkedin} className="text-muted-foreground hover:text-primary transition-colors" rel="noopener noreferrer"
+                aria-label="Nestgen Solutions on LinkedIn"
+                target="_blank">
                 <Linkedin className="w-5 h-5" />
               </a>
             )}
             {settings.twitter && (
-              <a href={settings.twitter} className="text-muted-foreground hover:text-primary transition-colors" target="_blank">
+              <a href={settings.twitter} className="text-muted-foreground hover:text-primary transition-colors" rel="noopener noreferrer"
+                aria-label="Nestgen Solutions on Twitter"
+                target="_blank">
                 <Twitter className="w-5 h-5" />
               </a>
             )}
             {settings.instagram && (
-              <a href={settings.instagram} className="text-muted-foreground hover:text-primary transition-colors" target="_blank">
+              <a href={settings.instagram} className="text-muted-foreground hover:text-primary transition-colors" rel="noopener noreferrer"
+                aria-label="Nestgen Solutions on Instagram"
+                target="_blank">
                 <Instagram className="w-5 h-5" />
               </a>
             )}
             {settings.facebook && (
-              <a href={settings.facebook} className="text-muted-foreground hover:text-primary transition-colors" target="_blank">
+              <a href={settings.facebook} className="text-muted-foreground hover:text-primary transition-colors" rel="noopener noreferrer"
+                aria-label="Nestgen Solutions on Facebook"
+                target="_blank">
                 <Facebook className="w-5 h-5" />
               </a>
             )}

@@ -2,62 +2,87 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
+/* 
+  ================================
+  NESTGEN SOLUTIONS DESIGN SYSTEM
+  Futuristic • Neon • Dark Tech
+  All colors are HSL (ShadCN compatible)
+  ================================
 */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 220 15% 15%;
+    /* ================== BASE ================== */
+    --background: 222 47% 11%;          /* Dark Navy */
+    --foreground: 210 40% 98%;          /* White */
 
-    --card: 0 0% 100%;
-    --card-foreground: 220 15% 15%;
+    --card: 224 45% 13%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 220 15% 15%;
+    --popover: 224 45% 13%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 217 91% 50%;
-    --primary-foreground: 0 0% 100%;
+    /* ================== BRAND COLORS ================== */
+    --primary: 260 85% 65%;             /* Purple */
+    --primary-foreground: 210 40% 98%;
 
-    --secondary: 210 100% 97%;
-    --secondary-foreground: 217 91% 50%;
+    --secondary: 190 95% 55%;           /* Cyan */
+    --secondary-foreground: 222 47% 11%;
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 220 10% 45%;
+    --accent: 330 90% 60%;              /* Pink */
+    --accent-foreground: 210 40% 98%;
 
-    --accent: 195 100% 50%;
-    --accent-foreground: 0 0% 100%;
+    /* ================== MUTED & STATES ================== */
+    --muted: 220 30% 18%;
+    --muted-foreground: 215 20% 65%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 85% 60%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 217 91% 50%;
+    /* ================== UI ELEMENTS ================== */
+    --border: 220 30% 22%;
+    --input: 220 30% 22%;
+    --ring: 260 85% 65%;
 
     --radius: 0.75rem;
 
-    /* Tech Blue Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(217, 91%, 50%), hsl(195, 100%, 50%));
-    --gradient-hero: linear-gradient(180deg, hsl(0, 0%, 100%), hsl(210, 100%, 97%));
-    
-    /* Shadows */
-    --shadow-primary: 0 10px 40px -10px hsl(217, 91%, 50%, 0.3);
-    --shadow-card: 0 4px 20px -2px hsl(220, 15%, 15%, 0.08);
-    --shadow-hover: 0 20px 50px -10px hsl(217, 91%, 50%, 0.4);
+    /* ================== GRADIENTS ================== */
+    --gradient-primary: linear-gradient(
+      135deg,
+      hsl(190 95% 55%),
+      hsl(260 85% 65%),
+      hsl(330 90% 60%)
+    );
 
-    /* Animations */
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --gradient-hero: radial-gradient(
+      circle at top,
+      hsl(260 85% 65% / 0.35),
+      hsl(222 47% 11%) 70%
+    );
+
+    /* ================== SHADOWS ================== */
+    --shadow-primary: 0 0 35px hsl(260 85% 65% / 0.45);
+    --shadow-card: 0 15px 45px rgba(0, 0, 0, 0.45);
+    --shadow-hover: 0 0 45px hsl(190 95% 55% / 0.4);
+
+    /* ================== ANIMATION ================== */
+    --transition-smooth: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* ================== DARK MODE (OPTIONAL) ================== */
+  .dark {
+    --background: 222 47% 8%;
+    --foreground: 210 40% 98%;
   }
 }
 
+/* ================== GLOBAL STYLES ================== */
 @layer base {
   * {
     @apply border-border;
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
   }
 }

@@ -77,7 +77,7 @@ export default function Technologies() {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center animate-fade-in-up">
             <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-primary bg-clip-text text-transparent">
-              Our Technology Stack <br/><br/>
+              Our Technology Stack
             </h1>
             <p className="text-xl text-muted-foreground">
               We leverage cutting-edge technologies and frameworks to build robust, scalable solutions that stand the test of time.

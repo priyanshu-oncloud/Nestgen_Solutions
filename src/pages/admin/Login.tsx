@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useAdmin } from "@/contexts/AdminContext";
 import { useToast } from "@/hooks/use-toast";
 import { Lock } from "lucide-react";
-import logo from "@/assets/logo.webp";
+import logo from "@/assets/logo.svg";
 
 const AdminLogin = () => {
   const [password, setPassword] = useState("");

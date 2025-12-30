@@ -14,7 +14,7 @@ const firebaseConfig = {
   projectId: "nestgen-solutions",
 
   // ✅ Storage bucket (GS URL se linked)
-  storageBucket: "nestgen-solutions.firebasestorage.app",
+  storageBucket: "gs://nestgen-solutions.firebasestorage.app",
   
   messagingSenderId: "285668258912",
   appId: "1:285668258912:web:1557582b21f1353cfdff05",

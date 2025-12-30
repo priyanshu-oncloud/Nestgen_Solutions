@@ -57,8 +57,7 @@ export default function About() {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center animate-fade-in-up">
             <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-primary bg-clip-text text-transparent">
-              About Nestgen Solutions <br />
-              <br />
+              About Nestgen Solutions
             </h1>
             <p className="text-xl text-muted-foreground">
               Building the future of technology, one innovation at a time. We're

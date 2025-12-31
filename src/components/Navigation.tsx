@@ -39,7 +39,7 @@ export const Navigation = () => {
     >
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20">
-          
+
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-3 group">
             <img
@@ -68,14 +68,18 @@ export const Navigation = () => {
                 {item.name}
               </Link>
             ))}
-            <Button variant="hero" size="sm" className="ml-4">
-              Get Started
-            </Button>
+
+            {/* ✅ Certificate Verification Button */}
+            <Link to="/certificate">
+              <Button variant="hero" size="sm" className="ml-4">
+                Certificate Verification
+              </Button>
+            </Link>
           </div>
 
           {/* Mobile Menu Button */}
           <button
-            aria-label="Open menu"
+            aria-label="Toggle menu"
             className="md:hidden p-2"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
@@ -106,9 +110,16 @@ export const Navigation = () => {
                   {item.name}
                 </Link>
               ))}
-              <Button variant="hero" size="sm" className="w-full mt-2">
-                Get Started
-              </Button>
+
+              {/* ✅ Mobile Certificate Verification */}
+              <Link
+                to="/certificate"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <Button variant="hero" size="sm" className="w-full mt-2">
+                  Certificate Verification
+                </Button>
+              </Link>
             </div>
           </div>
         )}

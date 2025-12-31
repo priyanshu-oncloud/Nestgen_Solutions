@@ -13,6 +13,7 @@ import Projects from "./pages/Projects";
 import Technologies from "./pages/Technologies";
 import Careers from "./pages/Careers";
 import Contact from "./pages/Contact";
+import CertificateVerification from "./pages/CertificateVerification";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/admin/Login";
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -45,6 +46,7 @@ const App = () => (
             <Route path="/projects" element={<><Navigation /><Projects /><Footer /></>} />
             <Route path="/technologies" element={<><Navigation /><Technologies /><Footer /></>} />
             <Route path="/careers" element={<><Navigation /><Careers /><Footer /></>} />
+            <Route path="/Certificate" element={<><Navigation /><CertificateVerification /><Footer /></>} />
             <Route path="/contact" element={<><Navigation /><Contact /><Footer /></>} />
             
             {/* Admin Routes */}

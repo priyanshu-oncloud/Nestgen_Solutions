@@ -1,112 +1,119 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import { ref, get } from "firebase/database";
-
 import { database } from "@/firebase";
 
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-
 import { ShieldCheck, ShieldX } from "lucide-react";
 
 export default function CertificateVerification() {
+  const params = useParams();
+  const certFromUrl = params.certNo
+    ? decodeURIComponent(params.certNo).trim().toUpperCase()
+    : "";
+
   const [certificateNo, setCertificateNo] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState("");
 
-  const verifyCertificate = async () => {
-    if (!certificateNo) return;
+  const verifyCertificate = async (value?: string) => {
+    const cert = (value || certificateNo).trim().toUpperCase();
+    if (!cert) return;
 
     try {
       setLoading(true);
       setError("");
       setResult(null);
 
-      const certRef = ref(
-        database,
-        `certificate_verifications/${certificateNo}`
-      );
+      // ✅ Direct lookup (because key = certificateNo)
+      const snap = await get(ref(database, `certificates/${cert}`));
 
-      const snapshot = await get(certRef);
-
-      if (snapshot.exists()) {
-        setResult(snapshot.val());
+      if (snap.exists()) {
+        setResult(snap.val());
       } else {
         setError("Certificate not found or invalid.");
       }
     } catch (err) {
-      console.error(err);
-      setError("Something went wrong. Please try again.");
+      console.error("Verification error:", err);
+      setError("Verification failed. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
+  // 🔹 Auto-verify when opened via QR URL
+  useEffect(() => {
+    if (certFromUrl) {
+      setCertificateNo(certFromUrl);
+      verifyCertificate(certFromUrl);
+    }
+  }, [certFromUrl]);
+
   return (
     <div className="min-h-screen pt-20">
-
       {/* HERO */}
-      <section className="py-24 bg-gradient-hero text-center">
-        <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-primary bg-clip-text text-transparent">
+      <section className="py-24 text-center bg-gradient-hero">
+        <h1 className="text-5xl font-bold">
           Internship Certificate Verification
         </h1>
-        <p className="text-xl text-muted-foreground">
-          Verify internship certificates issued by NestGen Solutions
-        </p>
       </section>
 
-      {/* VERIFICATION CARD */}
+      {/* VERIFY CARD */}
       <section className="py-24">
         <div className="max-w-xl mx-auto px-4">
-          <Card className="p-8 text-center space-y-6">
+          <Card className="p-8 space-y-6 text-center">
 
             <Input
-              placeholder="Enter Certificate Number (e.g. NGS-INT-2025-001)"
+              placeholder="Certificate Number (NGS-INT-2026-001)"
               value={certificateNo}
-              onChange={(e) => setCertificateNo(e.target.value.toUpperCase())}
+              onChange={(e) => setCertificateNo(e.target.value)}
             />
 
             <Button
-              size="lg"
               className="w-full"
-              onClick={verifyCertificate}
+              onClick={() => verifyCertificate()}
               disabled={loading}
             >
               {loading ? "Verifying..." : "Verify Certificate"}
             </Button>
 
-            {/* SUCCESS */}
+            {/* ✅ VERIFIED */}
             {result && (
-              <div className="mt-6 p-6 rounded-lg border bg-green-50 dark:bg-green-950">
+              <div className="p-6 border bg-green-50 rounded-lg">
                 <ShieldCheck className="w-12 h-12 mx-auto text-green-600" />
-                <h3 className="text-2xl font-bold mt-4 text-green-700">
+                <h3 className="text-xl font-bold mt-3 text-green-700">
                   Certificate Verified ✅
                 </h3>
 
-                <div className="mt-4 space-y-2 text-left">
-                  <p><strong>Name:</strong> {result.name}</p>
-                  <p><strong>Internship:</strong> {result.internship}</p>
-                  <p><strong>Duration:</strong> {result.duration}</p>
-                  <p><strong>Issued By:</strong> {result.issuedBy}</p>
-                  <p><strong>Issued On:</strong> {result.issuedOn}</p>
+                <div className="mt-4 text-left space-y-1 text-black">
+                  <p><b>Certificate No:</b> {result.certificateNo}</p>
+                  <p><b>Name:</b> {result.name}</p>
+                  <p><b>Role:</b> {result.role}</p>
+                  <p><b>Company:</b> {result.company}</p>
+                  <p><b>Duration:</b> {result.duration}</p>
+                  <p><b>Start Date:</b> {result.startDate}</p>
+                  <p><b>End Date:</b> {result.endDate}</p>
+                  <p><b>Issued On:</b> {result.issueDate}</p>
                 </div>
 
-                <Badge className="mt-4">Valid Certificate</Badge>
+                <Badge className="mt-4 bg-green-600 text-white">
+                  Valid Certificate
+                </Badge>
               </div>
             )}
 
-            {/* ERROR */}
+            {/* ❌ INVALID */}
             {error && (
-              <div className="mt-6 p-6 rounded-lg border bg-red-50 dark:bg-red-950">
+              <div className="p-6 border bg-red-50 rounded-lg">
                 <ShieldX className="w-12 h-12 mx-auto text-red-600" />
-                <h3 className="text-xl font-bold mt-4 text-red-700">
-                  Certificate Not Valid ❌
+                <h3 className="text-lg font-bold mt-3 text-red-700">
+                  Invalid Certificate ❌
                 </h3>
-                <p className="text-sm mt-2 text-muted-foreground">
-                  {error}
-                </p>
+                <p className="mt-2 text-sm">{error}</p>
               </div>
             )}
           </Card>

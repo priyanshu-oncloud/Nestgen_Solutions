@@ -70,7 +70,7 @@ export const Navigation = () => {
             ))}
 
             {/* ✅ Certificate Verification Button */}
-            <Link to="/certificate">
+            <Link to="/certificate-input">
               <Button variant="hero" size="sm" className="ml-4">
                 Certificate Verification
               </Button>
@@ -113,7 +113,7 @@ export const Navigation = () => {
 
               {/* ✅ Mobile Certificate Verification */}
               <Link
-                to="/certificate"
+                to="/certificate-input"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 <Button variant="hero" size="sm" className="w-full mt-2">

@@ -14,7 +14,9 @@ import Technologies from "./pages/Technologies";
 import Careers from "./pages/Careers";
 import Contact from "./pages/Contact";
 import CertificateVerification from "./pages/CertificateVerification";
+import CertificateInputPage from "./pages/CertificateInputPage";
 import NotFound from "./pages/NotFound";
+
 import AdminLogin from "./pages/admin/Login";
 import AdminDashboard from "./pages/admin/Dashboard";
 import ManageServices from "./pages/admin/ManageServices";
@@ -23,6 +25,7 @@ import ManageTeam from "./pages/admin/ManageTeam";
 import ManageTestimonials from "./pages/admin/ManageTestimonials";
 import FormSubmissions from "./pages/admin/FormSubmissions";
 import ManageWebsite from "./pages/admin/ManageWebsite";
+import ManageCertificates from "./pages/admin/ManageCertificates";
 
 const queryClient = new QueryClient();
 
@@ -46,7 +49,8 @@ const App = () => (
             <Route path="/projects" element={<><Navigation /><Projects /><Footer /></>} />
             <Route path="/technologies" element={<><Navigation /><Technologies /><Footer /></>} />
             <Route path="/careers" element={<><Navigation /><Careers /><Footer /></>} />
-            <Route path="/Certificate" element={<><Navigation /><CertificateVerification /><Footer /></>} />
+            <Route path="/certificate-verification/:certNo" element={<><Navigation /><CertificateVerification /><Footer /></>} />
+            <Route path="/certificate-input" element={<><Navigation /><CertificateInputPage /><Footer /></>} />
             <Route path="/contact" element={<><Navigation /><Contact /><Footer /></>} />
             
             {/* Admin Routes */}
@@ -58,6 +62,7 @@ const App = () => (
             <Route path="/admin/testimonials" element={<ProtectedRoute><ManageTestimonials /></ProtectedRoute>} />
             <Route path="/admin/submissions" element={<ProtectedRoute><FormSubmissions /></ProtectedRoute>} />
             <Route path="/admin/website" element={<ProtectedRoute><ManageWebsite /></ProtectedRoute>} />
+            <Route path="/admin/ManageCertificates" element={<ProtectedRoute><ManageCertificates /></ProtectedRoute>} />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

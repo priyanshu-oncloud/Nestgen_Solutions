@@ -4,11 +4,13 @@ import {
   set,
   runTransaction,
   onValue,
+  off,
   remove,
 } from "firebase/database";
 import { database } from "@/firebase";
 
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
 
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -79,7 +81,6 @@ export default function ManageCertificates() {
   const [editingCertNo, setEditingCertNo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  /* 🔍 Search & Filter */
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
 
@@ -93,14 +94,20 @@ export default function ManageCertificates() {
   /* 🔄 Fetch certificates */
   useEffect(() => {
     const certRef = ref(database, "certificates");
-    return onValue(certRef, (snapshot) => {
+
+    onValue(certRef, (snapshot) => {
       const data = snapshot.val();
-      if (!data) return setCertificates([]);
+      if (!data) {
+        setCertificates([]);
+        return;
+      }
 
       const list: Certificate[] = Object.values(data);
       list.sort((a, b) => b.createdAt - a.createdAt);
       setCertificates(list);
     });
+
+    return () => off(certRef);
   }, []);
 
   /* 🔍 Filter */
@@ -110,7 +117,9 @@ export default function ManageCertificates() {
       (c.certificateNo.toLowerCase().includes(q) ||
         c.name.toLowerCase().includes(q) ||
         c.role.toLowerCase().includes(q)) &&
-      (roleFilter ? c.role === roleFilter : true)
+      (roleFilter
+        ? c.role.toUpperCase() === roleFilter.toUpperCase()
+        : true)
     );
   });
 
@@ -118,6 +127,7 @@ export default function ManageCertificates() {
   const totalPages = Math.ceil(
     filteredCertificates.length / ROWS_PER_PAGE
   );
+
   const currentRows = filteredCertificates.slice(
     (page - 1) * ROWS_PER_PAGE,
     page * ROWS_PER_PAGE
@@ -155,43 +165,41 @@ export default function ManageCertificates() {
     pdf.save(`${cert.certificateNo}.pdf`);
   };
 
-  /* 🗑 DELETE */
+  /* 🗑 Delete */
   const handleDelete = async (certNo: string) => {
     if (!confirm("Are you sure you want to delete this certificate?")) return;
     await remove(ref(database, `certificates/${certNo}`));
-    if (editingCertNo === certNo) {
-      setShowForm(false);
-      setEditingCertNo(null);
-      setIsEditing(false);
-    }
   };
 
-  /* 📤 Export Excel */
-  const exportExcel = () => {
+  /* 📤 Export Excel (SAFE) */
+  const exportExcel = async () => {
     if (!filteredCertificates.length) {
       alert("No data to export");
       return;
     }
 
-    const data = filteredCertificates.map((c) => ({
-      "Certificate No": c.certificateNo,
-      Name: c.name,
-      Role: c.role,
-      Company: c.company,
-      "Start Date": c.startDate,
-      "End Date": c.endDate,
-      Duration: c.duration,
-      "Issue Date": c.issueDate,
-      "Verify URL": c.verifyUrl,
-    }));
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet("Certificates");
 
-    const worksheet = XLSX.utils.json_to_sheet(data);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Certificates");
-    XLSX.writeFile(workbook, "certificates.xlsx");
+    sheet.columns = [
+      { header: "Certificate No", key: "certificateNo", width: 22 },
+      { header: "Name", key: "name", width: 20 },
+      { header: "Role", key: "role", width: 20 },
+      { header: "Company", key: "company", width: 20 },
+      { header: "Start Date", key: "startDate", width: 15 },
+      { header: "End Date", key: "endDate", width: 15 },
+      { header: "Duration", key: "duration", width: 15 },
+      { header: "Issue Date", key: "issueDate", width: 15 },
+      { header: "Verify URL", key: "verifyUrl", width: 40 },
+    ];
+
+    filteredCertificates.forEach((c) => sheet.addRow(c));
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    saveAs(new Blob([buffer]), "certificates.xlsx");
   };
 
-  /* 💾 Save (Add + Edit) */
+  /* 💾 Save */
   const save = async () => {
     if (!form.name || !form.role || !form.startDate || !form.endDate) {
       alert("Fill all fields");
@@ -205,30 +213,28 @@ export default function ManageCertificates() {
         form.startDate,
         form.endDate
       );
+
       const duration = `${durationMonths} Month${
         durationMonths > 1 ? "s" : ""
       }`;
 
       const issueDate = new Date().toISOString().split("T")[0];
 
-      /* ===== EDIT ===== */
       if (editingCertNo) {
+        const existing = certificates.find(
+          (c) => c.certificateNo === editingCertNo
+        );
+
         await set(ref(database, `certificates/${editingCertNo}`), {
-          certificateNo: editingCertNo,
+          ...existing,
           name: form.name.trim(),
           role: form.role.toUpperCase(),
-          company: COMPANY_NAME,
           startDate: form.startDate,
           endDate: form.endDate,
           duration,
           issueDate,
-          verifyUrl: `${window.location.origin}/certificate-verification/${editingCertNo}`,
-          createdAt: Date.now(),
         });
-      }
-
-      /* ===== ADD ===== */
-      else {
+      } else {
         const year = new Date().getFullYear();
         const counterRef = ref(database, `counters/certificates/${year}`);
         const tx = await runTransaction(counterRef, (v) => (v || 0) + 1);
@@ -251,9 +257,9 @@ export default function ManageCertificates() {
       }
 
       setForm({ name: "", role: "", startDate: "", endDate: "" });
-      setEditingCertNo(null);
-      setIsEditing(false);
       setShowForm(false);
+      setIsEditing(false);
+      setEditingCertNo(null);
       setPage(1);
     } catch (err) {
       console.error(err);
@@ -267,20 +273,17 @@ export default function ManageCertificates() {
     <AdminLayout>
       <div className="space-y-6">
 
-        {/* ===== HEADER ===== */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-          <h1 className="text-2xl md:text-3xl font-bold">
-            Manage Certificates
-          </h1>
+        {/* HEADER */}
+        <div className="flex flex-col sm:flex-row justify-between gap-4">
+          <h1 className="text-2xl font-bold">Manage Certificates</h1>
           {!showForm && (
             <Button onClick={() => setShowForm(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Certificate
+              <Plus className="w-4 h-4 mr-2" /> Add Certificate
             </Button>
           )}
         </div>
 
-        {/* ===== FORM ===== */}
+        {/* FORM */}
         {showForm && (
           <Card className="max-w-xl">
             <CardHeader>
@@ -318,23 +321,13 @@ export default function ManageCertificates() {
                 }
               />
 
-              <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex gap-2">
                 <Button onClick={save} disabled={loading}>
                   {loading ? "Saving..." : "Save"}
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => {
-                    setShowForm(false);
-                    setIsEditing(false);
-                    setEditingCertNo(null);
-                    setForm({
-                      name: "",
-                      role: "",
-                      startDate: "",
-                      endDate: "",
-                    });
-                  }}
+                  onClick={() => setShowForm(false)}
                 >
                   Cancel
                 </Button>
@@ -343,10 +336,10 @@ export default function ManageCertificates() {
           </Card>
         )}
 
-        {/* ===== SEARCH / FILTER ===== */}
+        {/* SEARCH */}
         <div className="flex flex-col md:flex-row gap-3">
           <Input
-            placeholder="Search certificate / name / role"
+            placeholder="Search"
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -357,7 +350,7 @@ export default function ManageCertificates() {
             placeholder="Filter by role"
             value={roleFilter}
             onChange={(e) => {
-              setRoleFilter(e.target.value.toUpperCase());
+              setRoleFilter(e.target.value);
               setPage(1);
             }}
           />
@@ -366,93 +359,56 @@ export default function ManageCertificates() {
           </Button>
         </div>
 
-        {/* ===== DESKTOP TABLE ===== */}
-        <div className="hidden md:block">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Certificate No</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Duration</TableHead>
-                <TableHead>Issue Date</TableHead>
-                <TableHead>Actions</TableHead>
+        {/* TABLE */}
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Certificate No</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead>Duration</TableHead>
+              <TableHead>Issue Date</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+
+          <TableBody>
+            {currentRows.map((c) => (
+              <TableRow key={c.certificateNo}>
+                <TableCell>{c.certificateNo}</TableCell>
+                <TableCell>{c.name}</TableCell>
+                <TableCell>
+                  <Badge>{c.role}</Badge>
+                </TableCell>
+                <TableCell>{c.duration}</TableCell>
+                <TableCell>{c.issueDate}</TableCell>
+                <TableCell>
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={() => handleDownload(c)}>
+                      Download
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => handleEdit(c)}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => handleDelete(c.certificateNo)}
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </TableCell>
               </TableRow>
-            </TableHeader>
+            ))}
+          </TableBody>
+        </Table>
 
-            <TableBody>
-              {currentRows.map((c) => (
-                <TableRow key={c.certificateNo}>
-                  <TableCell>{c.certificateNo}</TableCell>
-                  <TableCell>{c.name}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{c.role}</Badge>
-                  </TableCell>
-                  <TableCell>{c.duration}</TableCell>
-                  <TableCell>{c.issueDate}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleDownload(c)}
-                      >
-                        Download
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => handleEdit(c)}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => handleDelete(c.certificateNo)}
-                      >
-                        Delete
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-
-        {/* ===== MOBILE CARDS ===== */}
-        <div className="md:hidden space-y-4">
-          {currentRows.map((c) => (
-            <Card key={c.certificateNo}>
-              <CardContent className="space-y-2 p-4">
-                <p className="font-semibold">{c.certificateNo}</p>
-                <p>{c.name}</p>
-                <Badge>{c.role}</Badge>
-                <p>{c.duration}</p>
-                <div className="flex flex-col gap-2">
-                  <Button onClick={() => handleDownload(c)}>
-                    Download
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    onClick={() => handleEdit(c)}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    onClick={() => handleDelete(c.certificateNo)}
-                  >
-                    Delete
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* ===== PAGINATION ===== */}
+        {/* PAGINATION */}
         <div className="flex justify-between items-center">
           <Button
             variant="outline"
@@ -461,12 +417,12 @@ export default function ManageCertificates() {
           >
             Previous
           </Button>
-          <span className="text-sm">
+          <span>
             Page {page} of {totalPages || 1}
           </span>
           <Button
             variant="outline"
-            disabled={page === totalPages || totalPages === 0}
+            disabled={page === totalPages}
             onClick={() => setPage((p) => p + 1)}
           >
             Next

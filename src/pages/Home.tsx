@@ -103,7 +103,7 @@ export default function Home() {
                 with Innovative Technology
               </h1>
 
-              <p className="text-xl md:text-2xl text-muted-foreground mb-10 animate-fade-in-up">
+              <p className="text-xl md:text-2xl text-muted-foreground mb-10">
                 We deliver next-generation software solutions that drive growth,
                 scalability, and digital excellence.
               </p>

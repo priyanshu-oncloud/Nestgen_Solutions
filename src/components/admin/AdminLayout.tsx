@@ -14,7 +14,7 @@ import {
   X,
 } from "lucide-react";
 import { useAdmin } from "@/contexts/AdminContext";
-import logo from "@/assets/logo.svg";
+import logo from "@/assets/logo.webp";
 
 interface AdminLayoutProps {
   children: React.ReactNode;

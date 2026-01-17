@@ -8,7 +8,7 @@ import {
   Facebook,
   Instagram
 } from "lucide-react";
-import logo from "@/assets/logo.svg";
+import logo from "@/assets/logo.webp";
 import { useEffect, useState } from "react";
 
 import { ref, onValue } from "firebase/database";

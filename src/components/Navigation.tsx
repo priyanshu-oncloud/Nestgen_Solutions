@@ -3,7 +3,9 @@ import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import logo from "@/assets/logo.svg";
+
+import logo64 from "@/assets/logo-64.webp";
+import logo128 from "@/assets/logo-128.webp";
 
 const navItems = [
   { name: "Home", path: "/" },
@@ -21,9 +23,7 @@ export const Navigation = () => {
   const location = useLocation();
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
+    const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -40,11 +40,17 @@ export const Navigation = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20">
 
-          {/* Logo */}
+          {/* ✅ OPTIMIZED LOGO */}
           <Link to="/" className="flex items-center space-x-3 group">
             <img
-              src={logo}
+              src={logo128}
+              srcSet={`${logo64} 64w, ${logo128} 128w`}
+              sizes="84px"
+              width={84}
+              height={84}
               alt="Nestgen Solutions Logo"
+              loading="eager"
+              decoding="async"
               className="w-12 h-12 rounded-full object-cover transition-transform group-hover:scale-105"
             />
             <span className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
@@ -69,7 +75,6 @@ export const Navigation = () => {
               </Link>
             ))}
 
-            {/* ✅ Certificate Verification Button */}
             <Link to="/certificate-input">
               <Button variant="hero" size="sm" className="ml-4">
                 Certificate Verification
@@ -111,7 +116,6 @@ export const Navigation = () => {
                 </Link>
               ))}
 
-              {/* ✅ Mobile Certificate Verification */}
               <Link
                 to="/certificate-input"
                 onClick={() => setIsMobileMenuOpen(false)}

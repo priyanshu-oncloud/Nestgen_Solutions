@@ -6,9 +6,6 @@ import { Link } from "react-router-dom";
 import { ArrowRight, Code2 } from "lucide-react";
 import * as Icons from "lucide-react";
 
-import { ref, onValue } from "firebase/database";
-import { database } from "@/firebase";
-
 interface Testimonial {
   id: string;
   clientName: string;
@@ -20,55 +17,65 @@ interface Testimonial {
 export default function Home() {
   const [displayServices, setDisplayServices] = useState<any[]>([]);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [animate, setAnimate] = useState(false);
 
+  /* ================= DEFER FIREBASE ================= */
   useEffect(() => {
-    /* ================= SERVICES ================= */
-    const servicesRef = ref(database, "services");
+    requestIdleCallback(async () => {
+      const { ref, onValue } = await import("firebase/database");
+      const { database } = await import("@/firebase");
 
-    const unsubscribeServices = onValue(servicesRef, (snapshot) => {
-      if (!snapshot.exists()) return;
+      /* -------- SERVICES -------- */
+      const servicesRef = ref(database, "services");
 
-      const data = snapshot.val();
+      const unsubscribeServices = onValue(servicesRef, (snapshot) => {
+        if (!snapshot.exists()) return;
 
-      const mapped = Object.entries(data)
-        .slice(0, 5)
-        .map(([_, value]: any) => {
-          const IconComponent = (Icons as any)[value.icon] || Code2;
+        const data = snapshot.val();
+        const mapped = Object.entries(data)
+          .slice(0, 5)
+          .map(([_, value]: any) => {
+            const IconComponent = (Icons as any)[value.icon] || Code2;
 
-          return {
-            icon: IconComponent,
-            title: value.title,
-            description: value.description,
-            features: [],
-          };
-        });
+            return {
+              icon: IconComponent,
+              title: value.title,
+              description: value.description,
+              features: [],
+            };
+          });
 
-      setDisplayServices(mapped);
+        setDisplayServices(mapped);
+      });
+
+      /* -------- TESTIMONIALS -------- */
+      const testimonialsRef = ref(database, "testimonials");
+
+      const unsubscribeTestimonials = onValue(testimonialsRef, (snapshot) => {
+        if (!snapshot.exists()) {
+          setTestimonials([]);
+          return;
+        }
+
+        const data = snapshot.val();
+        const list = Object.entries(data).map(([id, value]: any) => ({
+          id,
+          ...value,
+        }));
+
+        setTestimonials(list.reverse());
+      });
+
+      return () => {
+        unsubscribeServices();
+        unsubscribeTestimonials();
+      };
     });
+  }, []);
 
-    /* ================= TESTIMONIALS ================= */
-    const testimonialsRef = ref(database, "testimonials");
-
-    const unsubscribeTestimonials = onValue(testimonialsRef, (snapshot) => {
-      if (!snapshot.exists()) {
-        setTestimonials([]);
-        return;
-      }
-
-      const data = snapshot.val();
-
-      const list = Object.entries(data).map(([id, value]: any) => ({
-        id,
-        ...value,
-      }));
-
-      setTestimonials(list.reverse());
-    });
-
-    return () => {
-      unsubscribeServices();
-      unsubscribeTestimonials();
-    };
+  /* Enable animations AFTER first paint */
+  useEffect(() => {
+    window.addEventListener("load", () => setAnimate(true));
   }, []);
 
   const techLogos = [
@@ -86,10 +93,10 @@ export default function Home() {
     <main>
       <div className="min-h-screen">
 
-        {/* ================= HERO SECTION ================= */}
+        {/* ================= HERO (LCP FIXED) ================= */}
         <section className="relative min-h-screen flex items-center justify-center bg-gradient-hero overflow-hidden text-white">
 
-          {/* Glow blobs */}
+          {/* Decorative blobs (non-blocking) */}
           <div className="absolute inset-0 pointer-events-none">
             <div className="absolute -top-32 -left-32 w-[500px] h-[500px] bg-secondary/20 rounded-full blur-[120px]" />
             <div className="absolute top-1/3 -right-32 w-[500px] h-[500px] bg-primary/25 rounded-full blur-[120px]" />
@@ -98,7 +105,11 @@ export default function Home() {
           <div className="container mx-auto px-4 py-32 relative z-10">
             <div className="max-w-4xl mx-auto text-center">
 
-              <h1 className="text-5xl md:text-7xl font-extrabold mb-8 bg-gradient-primary bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(124,77,255,0.6)] animate-fade-in">
+              {/* LCP ELEMENT – no delay */}
+              <h1
+                id="lcp-text"
+                className="text-5xl md:text-7xl font-extrabold mb-8 bg-gradient-primary bg-clip-text text-transparent"
+              >
                 Transform Your Business <br />
                 with Innovative Technology
               </h1>
@@ -108,7 +119,11 @@ export default function Home() {
                 scalability, and digital excellence.
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-5 justify-center animate-fade-in-up">
+              <div
+                className={`flex flex-col sm:flex-row gap-5 justify-center ${
+                  animate ? "animate-fade-in-up" : ""
+                }`}
+              >
                 <Button
                   size="lg"
                   className="bg-gradient-primary text-white shadow-primary hover:scale-105 transition"
@@ -137,11 +152,7 @@ export default function Home() {
                   { number: "50+", label: "Team Members" },
                   { number: "98%", label: "Client Satisfaction" },
                 ].map((stat, index) => (
-                  <div
-                    key={index}
-                    className="text-center animate-fade-in"
-                    style={{ animationDelay: `${index * 120}ms` }}
-                  >
+                  <div key={index} className="text-center">
                     <div className="text-3xl md:text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
                       {stat.number}
                     </div>

@@ -21,14 +21,28 @@ export default defineConfig(({ mode }) => ({
   },
 
   build: {
-    target: "es2020", // ✅ Legacy JS warning fixed
+    target: "es2020", // ✅ Remove legacy JS & polyfills
     sourcemap: true,
     outDir: "dist",
     assetsDir: "assets",
+
     rollupOptions: {
       output: {
         manualChunks: {
+          // React core
           vendor: ["react", "react-dom"],
+
+          // Firebase split (prevents homepage blocking)
+          firebase: [
+            "firebase/app",
+            "firebase/database",
+            "firebase/auth",
+            "firebase/analytics",
+            "firebase/storage",
+          ],
+
+          // Admin-only heavy libraries
+          admin: ["exceljs", "jspdf"],
         },
       },
     },

@@ -4,8 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-import logo64 from "@/assets/logo-64.webp";
-import logo128 from "@/assets/logo-128.webp";
+import logo from "@/assets/logo.webp";
 
 const navItems = [
   { name: "Home", path: "/" },
@@ -43,8 +42,7 @@ export const Navigation = () => {
           {/* ✅ OPTIMIZED LOGO */}
           <Link to="/" className="flex items-center space-x-3 group">
             <img
-              src={logo128}
-              srcSet={`${logo64} 64w, ${logo128} 128w`}
+              src={logo}
               sizes="84px"
               width={84}
               height={84}

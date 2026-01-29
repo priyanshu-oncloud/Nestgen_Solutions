@@ -1,7 +1,8 @@
 import { useState } from "react";
+import axios from "axios";
+
 import { ref as dbRef, push } from "firebase/database";
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
-
 import { database, storage } from "@/firebase";
 
 import { Card } from "@/components/ui/card";
@@ -33,7 +34,6 @@ const benefits = [
 
 export default function Careers() {
   const { toast } = useToast();
-
   const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -59,15 +59,13 @@ export default function Careers() {
     try {
       setLoading(true);
 
-      /* ---------- 1. UPLOAD PDF TO STORAGE ---------- */
+      /* ---------- 1️⃣ UPLOAD RESUME ---------- */
       const fileName = `${Date.now()}_${formData.resume.name}`;
       const resumeRef = storageRef(storage, `resumes/${fileName}`);
-
       await uploadBytes(resumeRef, formData.resume);
-
       const resumeUrl = await getDownloadURL(resumeRef);
 
-      /* ---------- 2. SAVE DATA TO REALTIME DB ---------- */
+      /* ---------- 2️⃣ SAVE TO DATABASE ---------- */
       const submission = {
         name: formData.name,
         email: formData.email,
@@ -75,16 +73,36 @@ export default function Careers() {
         position: formData.position,
         experience: formData.experience,
         resumeName: formData.resume.name,
-        resumeUrl: resumeUrl,
+        resumeUrl,
         message: formData.message,
         submittedAt: new Date().toISOString(),
       };
 
       await push(dbRef(database, "careers_applications"), submission);
 
+      /* ---------- 3️⃣ SEND EMAIL (OPTIONAL) ---------- */
+      try {
+        await axios.post(
+          "https://us-central1-nestgen-solutions.cloudfunctions.net/sendCareerConfirmation",
+          {
+            email: submission.email,
+            name: submission.name,
+            phone: submission.phone,
+            position: submission.position,
+            experience: submission.experience,
+            message: submission.message,
+            resumeName: submission.resumeName,
+            resumeUrl: submission.resumeUrl,
+          }
+        );
+      } catch (emailError) {
+        console.warn("Email failed but data saved:", emailError);
+      }
+
+      /* ---------- SUCCESS ---------- */
       toast({
         title: "Application Submitted!",
-        description: "We'll review your application and get back to you soon.",
+        description: "Your application has been received successfully.",
       });
 
       /* ---------- RESET ---------- */
@@ -146,55 +164,40 @@ export default function Careers() {
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid md:grid-cols-2 gap-6">
-                <Input
-                  required
-                  placeholder="Full Name"
+                <Input required placeholder="Full Name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 />
-                <Input
-                  required
-                  type="email"
-                  placeholder="Email"
+                <Input required type="email" placeholder="Email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 />
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">
-                <Input
-                  placeholder="Phone"
+                <Input placeholder="Phone"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 />
-                <Input
-                  required
-                  placeholder="Position"
+                <Input required placeholder="Position"
                   value={formData.position}
                   onChange={(e) => setFormData({ ...formData, position: e.target.value })}
                 />
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">
-                <Input
-                  placeholder="Experience"
+                <Input placeholder="Experience"
                   value={formData.experience}
                   onChange={(e) => setFormData({ ...formData, experience: e.target.value })}
                 />
-                <Input
-                  required
-                  type="file"
-                  accept="application/pdf"
+                <Input required type="file" accept="application/pdf"
                   onChange={(e) =>
                     setFormData({ ...formData, resume: e.target.files?.[0] || null })
                   }
                 />
               </div>
 
-              <Textarea
-                required
-                rows={6}
-                placeholder="Cover letter / Message"
+              <Textarea required rows={6} placeholder="Cover letter / Message"
                 value={formData.message}
                 onChange={(e) => setFormData({ ...formData, message: e.target.value })}
               />
@@ -218,6 +221,7 @@ export default function Careers() {
           ))}
         </div>
       </section>
+
     </div>
   );
 }

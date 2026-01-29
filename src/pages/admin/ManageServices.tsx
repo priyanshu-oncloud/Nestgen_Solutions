@@ -3,7 +3,12 @@ import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -22,16 +27,19 @@ interface Service {
   title: string;
   description: string;
   icon: string;
+  keyPoints: string[];
 }
 
 const ManageServices = () => {
   const [services, setServices] = useState<Service[]>([]);
   const [isEditing, setIsEditing] = useState(false);
+
   const [current, setCurrent] = useState<Service>({
     id: "",
     title: "",
     description: "",
     icon: "",
+    keyPoints: [""], // ✅ minimum 1
   });
 
   const { toast } = useToast();
@@ -51,6 +59,7 @@ const ManageServices = () => {
         ([id, value]: any) => ({
           id,
           ...value,
+          keyPoints: value.keyPoints || [""],
         })
       );
 
@@ -58,7 +67,30 @@ const ManageServices = () => {
     });
   }, []);
 
-  /* ➕➖ ADD / UPDATE */
+  /* ➕ ADD KEY POINT */
+  const addKeyPoint = () => {
+    if (current.keyPoints.length >= 4) return;
+    setCurrent({
+      ...current,
+      keyPoints: [...current.keyPoints, ""],
+    });
+  };
+
+  /* ➖ REMOVE KEY POINT */
+  const removeKeyPoint = (index: number) => {
+    if (current.keyPoints.length === 1) return;
+    const updated = current.keyPoints.filter((_, i) => i !== index);
+    setCurrent({ ...current, keyPoints: updated });
+  };
+
+  /* ✏ UPDATE KEY POINT */
+  const updateKeyPoint = (index: number, value: string) => {
+    const updated = [...current.keyPoints];
+    updated[index] = value;
+    setCurrent({ ...current, keyPoints: updated });
+  };
+
+  /* ➕➖ ADD / UPDATE SERVICE */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -69,6 +101,7 @@ const ManageServices = () => {
           title: current.title,
           description: current.description,
           icon: current.icon,
+          keyPoints: current.keyPoints,
         });
 
         toast({ title: "Service updated successfully" });
@@ -78,6 +111,7 @@ const ManageServices = () => {
           title: current.title,
           description: current.description,
           icon: current.icon,
+          keyPoints: current.keyPoints,
           createdAt: Date.now(),
         });
 
@@ -96,7 +130,12 @@ const ManageServices = () => {
 
   /* ✏ EDIT */
   const handleEdit = (service: Service) => {
-    setCurrent(service);
+    setCurrent({
+      ...service,
+      keyPoints: service.keyPoints?.length
+        ? service.keyPoints
+        : [""],
+    });
     setIsEditing(true);
   };
 
@@ -108,8 +147,15 @@ const ManageServices = () => {
     toast({ title: "Service deleted successfully" });
   };
 
+  /* 🔄 RESET FORM */
   const resetForm = () => {
-    setCurrent({ id: "", title: "", description: "", icon: "" });
+    setCurrent({
+      id: "",
+      title: "",
+      description: "",
+      icon: "",
+      keyPoints: [""],
+    });
     setIsEditing(false);
   };
 
@@ -137,6 +183,8 @@ const ManageServices = () => {
 
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
+
+                {/* TITLE */}
                 <div>
                   <label className="text-sm font-medium">Title</label>
                   <Input
@@ -147,19 +195,69 @@ const ManageServices = () => {
                     required
                   />
                 </div>
+
+                {/* DESCRIPTION */}
                 <div>
                   <label className="text-sm font-medium">Description</label>
                   <Textarea
                     value={current.description}
                     onChange={(e) =>
-                      setCurrent({ ...current, description: e.target.value })
+                      setCurrent({
+                        ...current,
+                        description: e.target.value,
+                      })
                     }
                     rows={4}
                     required
                   />
                 </div>
+
+                {/* KEY POINTS */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">
+                    Key Points (min 1, max 4)
+                  </label>
+
+                  {current.keyPoints.map((point, index) => (
+                    <div key={index} className="flex gap-2">
+                      <Input
+                        value={point}
+                        onChange={(e) =>
+                          updateKeyPoint(index, e.target.value)
+                        }
+                        placeholder={`Key point ${index + 1}`}
+                        required
+                      />
+
+                      {current.keyPoints.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => removeKeyPoint(index)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+
+                  {current.keyPoints.length < 4 && (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={addKeyPoint}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Key Point
+                    </Button>
+                  )}
+                </div>
+
+                {/* ICON */}
                 <div>
-                  <label className="text-sm font-medium">Icon (Lucide icon name)</label>
+                  <label className="text-sm font-medium">
+                    Icon (Lucide icon name)
+                  </label>
                   <Input
                     value={current.icon}
                     onChange={(e) =>
@@ -168,17 +266,24 @@ const ManageServices = () => {
                     placeholder="e.g., Code2, Smartphone, Cloud"
                   />
                 </div>
+
                 <div className="flex space-x-2">
                   <Button type="submit">Save</Button>
-                  <Button type="button" variant="outline" onClick={resetForm}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={resetForm}
+                  >
                     Cancel
                   </Button>
                 </div>
+
               </form>
             </CardContent>
           </Card>
         )}
 
+        {/* SERVICES LIST */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {services.map((service) => (
             <Card key={service.id}>
@@ -187,12 +292,22 @@ const ManageServices = () => {
               </CardHeader>
 
               <CardContent className="space-y-3">
-                <p className="text-sm text-muted-foreground line-clamp-3">
+                <p className="text-sm text-muted-foreground">
                   {service.description}
                 </p>
 
+                <ul className="list-disc pl-4 text-sm text-muted-foreground">
+                  {service.keyPoints?.map((point, i) => (
+                    <li key={i}>{point}</li>
+                  ))}
+                </ul>
+
                 <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => handleEdit(service)}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleEdit(service)}
+                  >
                     <Pencil className="w-4 h-4" />
                   </Button>
                   <Button

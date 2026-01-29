@@ -55,12 +55,6 @@ export default function CertificateVerification() {
 
   return (
     <div className="min-h-screen pt-20">
-      {/* HERO */}
-      <section className="py-24 text-center bg-gradient-hero">
-        <h1 className="text-5xl font-bold">
-          Internship Certificate Verification
-        </h1>
-      </section>
 
       {/* VERIFY CARD */}
       <section className="py-24">

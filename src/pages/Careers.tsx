@@ -13,6 +13,14 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+import {
   Briefcase,
   Users,
   Award,
@@ -29,6 +37,29 @@ const benefits = [
   { icon: Users, title: "Great Team", description: "Collaborative and supportive work environment" },
   { icon: Briefcase, title: "Latest Tech", description: "Work with cutting-edge technologies" },
 ];
+
+/* ---------------- POSITIONS ---------------- */
+
+const positions = [
+  "Frontend Developer",
+  "Backend Developer",
+  "Full Stack Developer",
+  "UI/UX Designer",
+  "Data Analyst",
+  "DevOps Engineer",
+  "Intern",
+];
+
+/* ---------------- NAME FORMAT FUNCTION ---------------- */
+
+const formatName = (name: string) => {
+  return name
+    .toLowerCase()
+    .split(" ")
+    .filter(Boolean)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
 
 /* ---------------- COMPONENT ---------------- */
 
@@ -56,6 +87,15 @@ export default function Careers() {
       return;
     }
 
+    if (formData.phone.length !== 10) {
+      toast({
+        title: "Invalid Phone Number",
+        description: "Phone number must be exactly 10 digits",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setLoading(true);
 
@@ -67,7 +107,7 @@ export default function Careers() {
 
       /* ---------- 2️⃣ SAVE TO DATABASE ---------- */
       const submission = {
-        name: formData.name,
+        name: formatName(formData.name), // ✅ formatted here
         email: formData.email,
         phone: formData.phone,
         position: formData.position,
@@ -80,19 +120,12 @@ export default function Careers() {
 
       await push(dbRef(database, "careers_applications"), submission);
 
-      /* ---------- 3️⃣ SEND EMAIL (OPTIONAL) ---------- */
+      /* ---------- 3️⃣ SEND EMAIL ---------- */
       try {
         await axios.post(
           "https://us-central1-nestgen-solutions.cloudfunctions.net/sendCareerConfirmation",
           {
-            email: submission.email,
-            name: submission.name,
-            phone: submission.phone,
-            position: submission.position,
-            experience: submission.experience,
-            message: submission.message,
-            resumeName: submission.resumeName,
-            resumeUrl: submission.resumeUrl,
+            ...submission,
           }
         );
       } catch (emailError) {
@@ -163,48 +196,104 @@ export default function Careers() {
             <h2 className="text-3xl font-bold mb-6 text-center">Apply Now</h2>
 
             <form onSubmit={handleSubmit} className="space-y-6">
+
               <div className="grid md:grid-cols-2 gap-6">
-                <Input required placeholder="Full Name"
+                <Input
+                  required
+                  placeholder="Full Name"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                />
-                <Input required type="email" placeholder="Email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                />
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-6">
-                <Input placeholder="Phone"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                />
-                <Input required placeholder="Position"
-                  value={formData.position}
-                  onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-                />
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-6">
-                <Input placeholder="Experience"
-                  value={formData.experience}
-                  onChange={(e) => setFormData({ ...formData, experience: e.target.value })}
-                />
-                <Input required type="file" accept="application/pdf"
                   onChange={(e) =>
-                    setFormData({ ...formData, resume: e.target.files?.[0] || null })
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                />
+                <Input
+                  required
+                  type="email"
+                  placeholder="Email"
+                  value={formData.email}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
                   }
                 />
               </div>
 
-              <Textarea required rows={6} placeholder="Cover letter / Message"
+              <div className="grid md:grid-cols-2 gap-6">
+
+                {/* PHONE FIX */}
+                <Input
+                  placeholder="Phone (10 digits)"
+                  value={formData.phone}
+                  maxLength={10}
+                  inputMode="numeric"
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, "");
+                    if (value.length <= 10) {
+                      setFormData({ ...formData, phone: value });
+                    }
+                  }}
+                />
+
+                {/* POSITION SELECT */}
+                <Select
+                  value={formData.position}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, position: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Position" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {positions.map((pos, i) => (
+                      <SelectItem key={i} value={pos}>
+                        {pos}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                <Input
+                  placeholder="Experience"
+                  value={formData.experience}
+                  onChange={(e) =>
+                    setFormData({ ...formData, experience: e.target.value })
+                  }
+                />
+                <Input
+                  required
+                  type="file"
+                  accept="application/pdf"
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      resume: e.target.files?.[0] || null,
+                    })
+                  }
+                />
+              </div>
+
+              <Textarea
+                required
+                rows={6}
+                placeholder="Cover letter / Message"
                 value={formData.message}
-                onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, message: e.target.value })
+                }
               />
 
-              <Button type="submit" size="lg" className="w-full" disabled={loading}>
+              <Button
+                type="submit"
+                size="lg"
+                className="w-full"
+                disabled={loading}
+              >
                 {loading ? "Uploading..." : "Submit Application"}
               </Button>
+
             </form>
           </Card>
         </div>

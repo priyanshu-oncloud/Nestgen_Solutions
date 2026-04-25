@@ -35,7 +35,7 @@ exports.sendCareerConfirmation = functions.https.onRequest((req, res) => {
       const applicantMail = {
         from: "Nestgen Solutions Careers <hr@nestgensolutions.com>",
         to: email,
-        subject: "Internship Application Received - Nestgen Solutions",
+        subject: "Internship Application Received & Join Official Group - Nestgen Solutions",
         html: `
           <div style="font-family: Arial, sans-serif; line-height: 1.7; color: #333;">
             <p>Dear ${name},</p>
@@ -51,15 +51,18 @@ exports.sendCareerConfirmation = functions.https.onRequest((req, res) => {
               recruitment team.
             </p>
 
-            <p><strong>Next Steps:</strong></p>
-            <ul>
-              <li>✅ Our team will carefully evaluate your profile, skills, and interests.</li>
-              <li>
-                ✅ Shortlisted candidates will be contacted via email or phone for the next
-                stage of the process (task, discussion, or interview).
-              </li>
-              <li>✅ Please ensure your contact details remain active and accessible.</li>
-            </ul>
+            <p>
+              📢 <strong>Stay Connected:</strong><br/>
+              To receive updates regarding the internship process, announcements, and guidance,
+              you can join our official WhatsApp group below:
+            </p>
+
+            <p>
+              👉 <a href="https://chat.whatsapp.com/GAcNf6PcVCMLiGP0FDJN1V"
+              style="color:#25D366; font-weight:bold;">
+              Join Nestgen Internship WhatsApp Group
+              </a>
+            </p>
 
             <p>
               At <strong>Nestgen Solutions</strong>, we are committed to nurturing young
@@ -78,7 +81,7 @@ exports.sendCareerConfirmation = functions.https.onRequest((req, res) => {
               Best regards,<br />
               <strong>Recruitment Team</strong><br />
               Nestgen Solutions<br />
-              📧 hr@nestgensolutions.com
+              hr@nestgensolutions.com
             </p>
           </div>
         `,

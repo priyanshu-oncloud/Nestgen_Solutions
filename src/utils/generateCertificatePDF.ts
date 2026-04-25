@@ -1,5 +1,5 @@
 import jsPDF from "jspdf";
-import certificateBg from "@/assets/certificate-template.jpg";
+import certificateBg from "@/assets/certificate.png";
 
 export const generateCertificatePDF = async (
   data: {
@@ -58,7 +58,7 @@ export const generateCertificatePDF = async (
 
   /* ---------- QR CODE (VERIFY) ---------- */
   if (qrBase64) {
-    pdf.addImage(qrBase64, "PNG", 850, 540, 50, 50);
+    pdf.addImage(qrBase64, "PNG", 925, 540, 50, 50);
   }
 
   return pdf;

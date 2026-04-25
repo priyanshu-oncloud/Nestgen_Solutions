@@ -35,6 +35,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const navItems = [
     { name: "Dashboard", path: "/admin", icon: Home },
     { name: "Add Certificate", path: "/admin/ManageCertificates", icon: Briefcase },
+    { name: "Add Offer Letter", path: "/admin/ManageOffers", icon: Briefcase },
     { name: "Services", path: "/admin/services", icon: Briefcase },
     { name: "Projects", path: "/admin/projects", icon: FolderKanban },
     { name: "Team", path: "/admin/team", icon: Users },

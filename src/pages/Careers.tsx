@@ -20,13 +20,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import {
-  Briefcase,
-  Users,
-  Award,
-  Coffee,
-  TrendingUp
-} from "lucide-react";
+import { Briefcase, Users, Award, Coffee, TrendingUp, CreditCard, CircleCheck as CheckCircle2 } from "lucide-react";
+
+/* ---------------- RAZORPAY TYPES ---------------- */
+
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
+
+/* ---------------- CONSTANTS ---------------- */
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const APPLICATION_FEE = 99; // INR
+const APPLICATION_FEE_PAISE = 9900; // paise
 
 /* ---------------- BENEFITS ---------------- */
 
@@ -61,11 +70,31 @@ const formatName = (name: string) => {
     .join(" ");
 };
 
+/* ---------------- LOAD RAZORPAY SCRIPT ---------------- */
+
+const loadRazorpayScript = (): Promise<boolean> => {
+  return new Promise((resolve) => {
+    if (window.Razorpay) {
+      resolve(true);
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
+
 /* ---------------- COMPONENT ---------------- */
 
 export default function Careers() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [paymentDone, setPaymentDone] = useState(false);
+  const [paymentId, setPaymentId] = useState("");
+  const [orderId, setOrderId] = useState("");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -77,56 +106,188 @@ export default function Careers() {
     message: "",
   });
 
-  /* ---------------- SUBMIT ---------------- */
+  /* ---------------- VALIDATE FORM BEFORE PAYMENT ---------------- */
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!formData.resume) {
-      toast({ title: "Please upload resume (PDF)", variant: "destructive" });
-      return;
+  const validateForm = (): boolean => {
+    if (!formData.name.trim()) {
+      toast({ title: "Please enter your name", variant: "destructive" });
+      return false;
     }
-
+    if (!formData.email.trim()) {
+      toast({ title: "Please enter your email", variant: "destructive" });
+      return false;
+    }
     if (formData.phone.length !== 10) {
       toast({
         title: "Invalid Phone Number",
         description: "Phone number must be exactly 10 digits",
         variant: "destructive",
       });
-      return;
+      return false;
     }
+    if (!formData.position) {
+      toast({ title: "Please select a position", variant: "destructive" });
+      return false;
+    }
+    if (!formData.resume) {
+      toast({ title: "Please upload resume (PDF)", variant: "destructive" });
+      return false;
+    }
+    return true;
+  };
+
+  /* ---------------- INITIATE PAYMENT ---------------- */
+
+  const initiatePayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!validateForm()) return;
 
     try {
       setLoading(true);
 
-      /* ---------- 1️⃣ UPLOAD RESUME ---------- */
-      const fileName = `${Date.now()}_${formData.resume.name}`;
-      const resumeRef = storageRef(storage, `resumes/${fileName}`);
-      await uploadBytes(resumeRef, formData.resume);
-      const resumeUrl = await getDownloadURL(resumeRef);
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) {
+        toast({ title: "Failed to load payment gateway", variant: "destructive" });
+        setLoading(false);
+        return;
+      }
 
-      /* ---------- 2️⃣ SAVE TO DATABASE ---------- */
+      // Create order via edge function
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/razorpay/create-order`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          name: formatName(formData.name),
+          email: formData.email,
+          phone: formData.phone,
+          position: formData.position,
+          amount: APPLICATION_FEE_PAISE,
+        }),
+      });
+
+      const orderData = await res.json();
+
+      if (!res.ok) {
+        toast({ title: "Failed to create payment order", variant: "destructive" });
+        setLoading(false);
+        return;
+      }
+
+      // Open Razorpay checkout
+      const options = {
+        key: orderData.keyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "Nestgen Solutions",
+        description: `Application Fee - ${formData.position}`,
+        order_id: orderData.orderId,
+        prefill: {
+          name: formatName(formData.name),
+          email: formData.email,
+          contact: formData.phone,
+        },
+        theme: {
+          color: "#6C63FF",
+        },
+        handler: async (response: any) => {
+          // Verify payment
+          try {
+            const verifyRes = await fetch(`${SUPABASE_URL}/functions/v1/razorpay/verify-payment`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+              },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
+
+            const verifyData = await verifyRes.json();
+
+            if (verifyData.verified) {
+              setPaymentDone(true);
+              setPaymentId(response.razorpay_payment_id);
+              setOrderId(response.razorpay_order_id);
+              toast({
+                title: "Payment Successful!",
+                description: "Now submitting your application...",
+              });
+              submitApplication();
+            } else {
+              toast({
+                title: "Payment Verification Failed",
+                description: "If money was deducted, it will be refunded in 5-7 days.",
+                variant: "destructive",
+              });
+              setLoading(false);
+            }
+          } catch (err) {
+            console.error("Verification error:", err);
+            toast({
+              title: "Payment verification error",
+              description: "Please contact support if money was deducted.",
+              variant: "destructive",
+            });
+            setLoading(false);
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            setLoading(false);
+            toast({ title: "Payment cancelled", variant: "destructive" });
+          },
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (error) {
+      console.error("Payment initiation error:", error);
+      toast({ title: "Payment failed to initiate", variant: "destructive" });
+      setLoading(false);
+    }
+  };
+
+  /* ---------------- SUBMIT APPLICATION (AFTER PAYMENT) ---------------- */
+
+  const submitApplication = async () => {
+    try {
+      /* ---------- 1. UPLOAD RESUME ---------- */
+      const fileName = `${Date.now()}_${formData.resume!.name}`;
+      const resumeStorageRef = storageRef(storage, `resumes/${fileName}`);
+      await uploadBytes(resumeStorageRef, formData.resume!);
+      const resumeUrl = await getDownloadURL(resumeStorageRef);
+
+      /* ---------- 2. SAVE TO DATABASE ---------- */
       const submission = {
-        name: formatName(formData.name), // ✅ formatted here
+        name: formatName(formData.name),
         email: formData.email,
         phone: formData.phone,
         position: formData.position,
         experience: formData.experience,
-        resumeName: formData.resume.name,
+        resumeName: formData.resume!.name,
         resumeUrl,
         message: formData.message,
+        paymentId,
+        orderId,
+        paymentAmount: APPLICATION_FEE,
         submittedAt: new Date().toISOString(),
       };
 
       await push(dbRef(database, "careers_applications"), submission);
 
-      /* ---------- 3️⃣ SEND EMAIL ---------- */
+      /* ---------- 3. SEND EMAIL ---------- */
       try {
         await axios.post(
           "https://us-central1-nestgen-solutions.cloudfunctions.net/sendCareerConfirmation",
-          {
-            ...submission,
-          }
+          { ...submission }
         );
       } catch (emailError) {
         console.warn("Email failed but data saved:", emailError);
@@ -135,7 +296,7 @@ export default function Careers() {
       /* ---------- SUCCESS ---------- */
       toast({
         title: "Application Submitted!",
-        description: "Your application has been received successfully.",
+        description: "Your application and payment have been received successfully.",
       });
 
       /* ---------- RESET ---------- */
@@ -148,12 +309,14 @@ export default function Careers() {
         resume: null,
         message: "",
       });
-
+      setPaymentDone(false);
+      setPaymentId("");
+      setOrderId("");
     } catch (error) {
       console.error(error);
       toast({
         title: "Submission Failed",
-        description: "Please try again later",
+        description: "Payment was successful but application save failed. Please contact support.",
         variant: "destructive",
       });
     } finally {
@@ -193,9 +356,23 @@ export default function Careers() {
       <section className="py-24">
         <div className="max-w-3xl mx-auto px-4">
           <Card className="p-8">
-            <h2 className="text-3xl font-bold mb-6 text-center">Apply Now</h2>
+            <h2 className="text-3xl font-bold mb-2 text-center">Apply Now</h2>
+            <p className="text-center text-muted-foreground mb-6">
+              Application fee: <span className="font-bold text-foreground">Rs. {APPLICATION_FEE}</span>
+            </p>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Payment success banner */}
+            {paymentDone && (
+              <div className="mb-6 p-4 rounded-lg bg-green-500/10 border border-green-500/30 flex items-center gap-3">
+                <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-green-500">Payment Successful</p>
+                  <p className="text-sm text-muted-foreground">Payment ID: {paymentId}</p>
+                </div>
+              </div>
+            )}
+
+            <form onSubmit={initiatePayment} className="space-y-6">
 
               <div className="grid md:grid-cols-2 gap-6">
                 <Input
@@ -218,8 +395,6 @@ export default function Careers() {
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">
-
-                {/* PHONE FIX */}
                 <Input
                   placeholder="Phone (10 digits)"
                   value={formData.phone}
@@ -232,8 +407,6 @@ export default function Careers() {
                     }
                   }}
                 />
-
-                {/* POSITION SELECT */}
                 <Select
                   value={formData.position}
                   onValueChange={(value) =>
@@ -251,7 +424,6 @@ export default function Careers() {
                     ))}
                   </SelectContent>
                 </Select>
-
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">
@@ -291,8 +463,14 @@ export default function Careers() {
                 className="w-full"
                 disabled={loading}
               >
-                {loading ? "Uploading..." : "Submit Application"}
+                <CreditCard className="w-5 h-5 mr-2" />
+                {loading ? "Processing..." : `Pay Rs. ${APPLICATION_FEE} & Submit Application`}
               </Button>
+
+              <p className="text-xs text-center text-muted-foreground">
+                By clicking above, you will be redirected to Razorpay for secure payment.
+                Your application will be submitted after successful payment.
+              </p>
 
             </form>
           </Card>

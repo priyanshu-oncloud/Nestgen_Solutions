@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import logo from "@/assets/logo.webp";
 import {
   Dialog,
   DialogContent,
@@ -227,7 +228,7 @@ export default function Careers() {
       currency: "INR",
       name: "Nestgen Solutions",
       description: `Application Fee - ${formData.position || "Internship"}`,
-      image: "/placeholder.svg",
+      image: "/logo.webp",
       handler: function (response: any) {
         // Payment success → auto-submit
         submitApplication(response.razorpay_payment_id);
@@ -241,7 +242,7 @@ export default function Careers() {
         position: formData.position,
       },
       theme: {
-        color: "#6366f1",
+        color: "#0F1729",
       },
       modal: {
         ondismiss: () => {

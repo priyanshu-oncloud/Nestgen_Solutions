@@ -40,7 +40,7 @@ import {
 
 /* ---------------- RAZORPAY CONFIG ---------------- */
 // TODO: Replace with your actual Razorpay Key ID (publishable, safe in frontend)
-const RAZORPAY_KEY_ID = "rzp_test_XXXXXXXXXXXXXX";
+const RAZORPAY_KEY_ID = "rzp_live_SiZmBQMrjXlgmM";
 const APPLICATION_FEE = 99; // ₹99
 
 declare global {
@@ -74,13 +74,14 @@ const benefits = [
 /* ---------------- POSITIONS ---------------- */
 
 const positions = [
+  "Web Developer",
   "Frontend Developer",
   "Backend Developer",
-  "Full Stack Developer",
   "UI/UX Designer",
   "Data Analyst",
   "DevOps Engineer",
-  "Intern",
+  "Cyber Security",
+  "Internet Of Things (IOT)",
 ];
 
 /* ---------------- NAME FORMAT FUNCTION ---------------- */

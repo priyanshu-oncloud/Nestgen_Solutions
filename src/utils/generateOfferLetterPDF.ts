@@ -1,5 +1,5 @@
 import jsPDF from "jspdf";
-import offerBg from "@/assets/offer.png";
+import offerBg from "@/assets/Offer.png";
 
 export const generateOfferLetterPDF = async (data: {
   name: string;

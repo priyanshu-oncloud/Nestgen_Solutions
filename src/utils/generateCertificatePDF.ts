@@ -1,5 +1,5 @@
 import jsPDF from "jspdf";
-import certificateBg from "@/assets/certificate.png";
+import certificateBg from "@/assets/Certificate.png";
 
 export const generateCertificatePDF = async (
   data: {

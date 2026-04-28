@@ -42,7 +42,7 @@ import {
 /* ---------------- RAZORPAY CONFIG ---------------- */
 // TODO: Replace with your actual Razorpay Key ID (publishable, safe in frontend)
 const RAZORPAY_KEY_ID = "rzp_live_SiZmBQMrjXlgmM";
-const APPLICATION_FEE = 99; // ₹99
+const APPLICATION_FEE = 49; // ₹99
 
 declare global {
   interface Window {
@@ -427,7 +427,7 @@ export default function Careers() {
                           <div>
                             <h4 className="font-semibold mb-1">1. Registration Fee</h4>
                             <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
-                              <li>A one-time non-refundable fee of ₹99 is required to enroll in the internship program.</li>
+                              <li>A one-time non-refundable fee of ₹49 is required to enroll in the internship program.</li>
                               <li>This fee is charged for administrative, onboarding, and training resources.</li>
                             </ul>
                           </div>
@@ -443,7 +443,7 @@ export default function Careers() {
                           <div>
                             <h4 className="font-semibold mb-1">3. Duration</h4>
                             <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
-                              <li>The internship duration ranges from 1 to 3 months (flexible).</li>
+                              <li>The internship duration ranges from 2 to 3 months (flexible).</li>
                             </ul>
                           </div>
 
@@ -497,7 +497,7 @@ export default function Careers() {
                           <div>
                             <h4 className="font-semibold mb-1">10. Acceptance</h4>
                             <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
-                              <li>By registering and paying ₹99, the intern agrees to all terms mentioned above.</li>
+                              <li>By registering and paying ₹49, the intern agrees to all terms mentioned above.</li>
                             </ul>
                           </div>
 

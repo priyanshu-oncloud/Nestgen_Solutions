@@ -27,11 +27,19 @@ import FormSubmissions from "./pages/admin/FormSubmissions";
 import ManageWebsite from "./pages/admin/ManageWebsite";
 import ManageCertificates from "./pages/admin/ManageCertificates";
 import ManageOffers from "./pages/admin/ManageOffers";
+import ManageCoupons from "./pages/admin/ManageCoupons";
 
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated } = useAdmin();
+  const { isAuthenticated, loading } = useAdmin();
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-muted-foreground">
+        Loading...
+      </div>
+    );
+  }
   return isAuthenticated ? <>{children}</> : <Navigate to="/admin/login" />;
 };
 
@@ -65,6 +73,7 @@ const App = () => (
             <Route path="/admin/website" element={<ProtectedRoute><ManageWebsite /></ProtectedRoute>} />
             <Route path="/admin/ManageCertificates" element={<ProtectedRoute><ManageCertificates /></ProtectedRoute>} />
             <Route path="/admin/ManageOffers" element={<ProtectedRoute><ManageOffers /></ProtectedRoute>} />
+            <Route path="/admin/ManageCoupons" element={<ProtectedRoute><ManageCoupons /></ProtectedRoute>} />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

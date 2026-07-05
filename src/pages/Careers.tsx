@@ -1,7 +1,7 @@
 import { useState } from "react";
 import axios from "axios";
 
-import { ref as dbRef, push } from "firebase/database";
+import { ref as dbRef, push, get, runTransaction } from "firebase/database";
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { database, storage } from "@/firebase";
 
@@ -11,7 +11,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import logo from "@/assets/logo.webp";
 import {
   Dialog,
   DialogContent,
@@ -41,8 +40,8 @@ import {
 
 /* ---------------- RAZORPAY CONFIG ---------------- */
 // TODO: Replace with your actual Razorpay Key ID (publishable, safe in frontend)
-const RAZORPAY_KEY_ID = "rzp_live_SiZmBQMrjXlgmM";
-const APPLICATION_FEE = 49; // ₹99
+const RAZORPAY_KEY_ID = "rzp_test_XXXXXXXXXXXXXX";
+const APPLICATION_FEE = 99; // ₹99
 
 declare global {
   interface Window {
@@ -75,14 +74,13 @@ const benefits = [
 /* ---------------- POSITIONS ---------------- */
 
 const positions = [
-  "Web Developer",
   "Frontend Developer",
   "Backend Developer",
+  "Full Stack Developer",
   "UI/UX Designer",
   "Data Analyst",
   "DevOps Engineer",
-  "Cyber Security",
-  "Internet Of Things (IOT)",
+  "Intern",
 ];
 
 /* ---------------- NAME FORMAT FUNCTION ---------------- */
@@ -103,6 +101,68 @@ export default function Careers() {
   const [loading, setLoading] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [termsOpen, setTermsOpen] = useState(false);
+
+  /* ---- COUPON STATE ---- */
+  const [couponInput, setCouponInput] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState<null | {
+    code: string;
+    discountType: "flat" | "percent";
+    discountValue: number;
+  }>(null);
+
+  const discount = appliedCoupon
+    ? appliedCoupon.discountType === "flat"
+      ? Math.min(appliedCoupon.discountValue, APPLICATION_FEE)
+      : Math.round((APPLICATION_FEE * appliedCoupon.discountValue) / 100)
+    : 0;
+  const finalAmount = Math.max(0, APPLICATION_FEE - discount);
+
+  const applyCoupon = async () => {
+    const code = couponInput.trim().toUpperCase();
+    if (!code) return;
+    setCouponLoading(true);
+    try {
+      const snap = await get(dbRef(database, `coupons/${code}`));
+      if (!snap.exists()) {
+        toast({ title: "Invalid coupon", variant: "destructive" });
+        return;
+      }
+      const c = snap.val();
+      if (!c.active) {
+        toast({ title: "Coupon is inactive", variant: "destructive" });
+        return;
+      }
+      if (c.expiresAt && new Date(c.expiresAt) < new Date()) {
+        toast({ title: "Coupon expired", variant: "destructive" });
+        return;
+      }
+      if (c.usageLimit && c.usedCount >= c.usageLimit) {
+        toast({ title: "Coupon usage limit reached", variant: "destructive" });
+        return;
+      }
+      setAppliedCoupon({
+        code: c.code,
+        discountType: c.discountType,
+        discountValue: c.discountValue,
+      });
+      toast({ title: "Coupon applied!", description: `${code} — you saved ₹${
+        c.discountType === "flat"
+          ? Math.min(c.discountValue, APPLICATION_FEE)
+          : Math.round((APPLICATION_FEE * c.discountValue) / 100)
+      }` });
+    } catch (e) {
+      console.error(e);
+      toast({ title: "Could not apply coupon", variant: "destructive" });
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponInput("");
+  };
 
   const [formData, setFormData] = useState({
     name: "",
@@ -137,12 +197,27 @@ export default function Careers() {
         resumeUrl,
         message: formData.message,
         paymentId,
-        amountPaid: APPLICATION_FEE,
-        paymentStatus: "paid",
+        originalAmount: APPLICATION_FEE,
+        couponCode: appliedCoupon?.code || null,
+        discountApplied: discount,
+        amountPaid: finalAmount,
+        paymentStatus: finalAmount === 0 ? "free" : "paid",
         submittedAt: new Date().toISOString(),
       };
 
       await push(dbRef(database, "careers_applications"), submission);
+
+      /* ---------- 2️⃣b INCREMENT COUPON USAGE ---------- */
+      if (appliedCoupon) {
+        try {
+          await runTransaction(
+            dbRef(database, `coupons/${appliedCoupon.code}/usedCount`),
+            (cur) => (cur || 0) + 1
+          );
+        } catch (e) {
+          console.warn("Coupon counter update failed:", e);
+        }
+      }
 
       /* ---------- 3️⃣ SEND EMAIL ---------- */
       try {
@@ -156,7 +231,9 @@ export default function Careers() {
 
       toast({
         title: "Application Submitted!",
-        description: `Payment successful (₹${APPLICATION_FEE}). Your application has been received.`,
+        description: finalAmount === 0
+          ? `Coupon applied — free registration. Your application has been received.`
+          : `Payment successful (₹${finalAmount}). Your application has been received.`,
       });
 
       setFormData({
@@ -168,6 +245,8 @@ export default function Careers() {
         resume: null,
         message: "",
       });
+      setAppliedCoupon(null);
+      setCouponInput("");
     } catch (error) {
       console.error(error);
       toast({
@@ -208,6 +287,13 @@ export default function Careers() {
       return;
     }
 
+    /* ---------- FREE (100% discount) → skip Razorpay ---------- */
+    if (finalAmount === 0) {
+      setLoading(true);
+      await submitApplication("FREE_COUPON_" + (appliedCoupon?.code || ""));
+      return;
+    }
+
     /* ---------- LOAD RAZORPAY ---------- */
     setLoading(true);
     const ok = await loadRazorpayScript();
@@ -224,11 +310,11 @@ export default function Careers() {
     /* ---------- OPEN CHECKOUT ---------- */
     const options = {
       key: RAZORPAY_KEY_ID,
-      amount: APPLICATION_FEE * 100, // paise
+      amount: finalAmount * 100, // paise
       currency: "INR",
       name: "Nestgen Solutions",
       description: `Application Fee - ${formData.position || "Internship"}`,
-      image: "/logo.webp",
+      image: "/placeholder.svg",
       handler: function (response: any) {
         // Payment success → auto-submit
         submitApplication(response.razorpay_payment_id);
@@ -242,7 +328,7 @@ export default function Careers() {
         position: formData.position,
       },
       theme: {
-        color: "#0F1729",
+        color: "#6366f1",
       },
       modal: {
         ondismiss: () => {
@@ -292,6 +378,19 @@ export default function Careers() {
         <p className="text-xl text-muted-foreground">
           Build your career with passionate innovators shaping the future.
         </p>
+      </section>
+
+      {/* BENEFITS */}
+      <section className="py-24">
+        <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {benefits.map((b, i) => (
+            <Card key={i} className="p-6">
+              <b.icon className="w-8 h-8 mb-4" />
+              <h3 className="text-xl font-semibold">{b.title}</h3>
+              <p className="text-sm text-muted-foreground">{b.description}</p>
+            </Card>
+          ))}
+        </div>
       </section>
 
       {/* FORM */}
@@ -390,6 +489,58 @@ export default function Careers() {
                 }
               />
 
+              {/* COUPON CODE */}
+              <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-semibold">Have a coupon code?</label>
+                  {appliedCoupon && (
+                    <Badge variant="default">
+                      {appliedCoupon.code} applied
+                    </Badge>
+                  )}
+                </div>
+
+                {!appliedCoupon ? (
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Enter coupon code"
+                      value={couponInput}
+                      onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                      className="uppercase"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={applyCoupon}
+                      disabled={couponLoading || !couponInput.trim()}
+                    >
+                      {couponLoading ? "Checking..." : "Apply"}
+                    </Button>
+                  </div>
+                ) : (
+                  <Button type="button" variant="ghost" size="sm" onClick={removeCoupon}>
+                    Remove coupon
+                  </Button>
+                )}
+
+                <div className="text-sm space-y-1 pt-2 border-t border-border">
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Registration Fee</span>
+                    <span>₹{APPLICATION_FEE}</span>
+                  </div>
+                  {discount > 0 && (
+                    <div className="flex justify-between text-green-600">
+                      <span>Discount</span>
+                      <span>− ₹{discount}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-bold text-base pt-1">
+                    <span>Total Payable</span>
+                    <span>₹{finalAmount}</span>
+                  </div>
+                </div>
+              </div>
+
               {/* TERMS & CONDITIONS */}
               <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/30 p-4">
                 <Checkbox
@@ -427,7 +578,7 @@ export default function Careers() {
                           <div>
                             <h4 className="font-semibold mb-1">1. Registration Fee</h4>
                             <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
-                              <li>A one-time non-refundable fee of ₹49 is required to enroll in the internship program.</li>
+                              <li>A one-time non-refundable fee of ₹99 is required to enroll in the internship program.</li>
                               <li>This fee is charged for administrative, onboarding, and training resources.</li>
                             </ul>
                           </div>
@@ -443,7 +594,7 @@ export default function Careers() {
                           <div>
                             <h4 className="font-semibold mb-1">3. Duration</h4>
                             <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
-                              <li>The internship duration ranges from 2 to 3 months (flexible).</li>
+                              <li>The internship duration ranges from 1 to 3 months (flexible).</li>
                             </ul>
                           </div>
 
@@ -497,7 +648,7 @@ export default function Careers() {
                           <div>
                             <h4 className="font-semibold mb-1">10. Acceptance</h4>
                             <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
-                              <li>By registering and paying ₹49, the intern agrees to all terms mentioned above.</li>
+                              <li>By registering and paying ₹99, the intern agrees to all terms mentioned above.</li>
                             </ul>
                           </div>
 
@@ -535,24 +686,15 @@ export default function Careers() {
                 className="w-full"
                 disabled={loading || !acceptedTerms}
               >
-                {loading ? "Processing..." : `Pay ₹${APPLICATION_FEE} & Submit Application`}
+                {loading
+                  ? "Processing..."
+                  : finalAmount === 0
+                    ? "Submit Application (Free)"
+                    : `Pay ₹${finalAmount} & Submit Application`}
               </Button>
 
             </form>
           </Card>
-        </div>
-      </section>
-
-      {/* BENEFITS */}
-      <section className="py-24">
-        <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {benefits.map((b, i) => (
-            <Card key={i} className="p-6">
-              <b.icon className="w-8 h-8 mb-4" />
-              <h3 className="text-xl font-semibold">{b.title}</h3>
-              <p className="text-sm text-muted-foreground">{b.description}</p>
-            </Card>
-          ))}
         </div>
       </section>
 

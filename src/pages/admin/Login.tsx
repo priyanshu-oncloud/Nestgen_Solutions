@@ -5,35 +5,34 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAdmin } from "@/contexts/AdminContext";
 import { useToast } from "@/hooks/use-toast";
-import { Lock } from "lucide-react";
+import { Lock, Mail, Loader2 } from "lucide-react";
 import logo from "@/assets/logo.webp";
 
 const AdminLogin = () => {
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { login, isAuthenticated } = useAdmin();
+  const [submitting, setSubmitting] = useState(false);
+  const { login, isAuthenticated, loading } = useAdmin();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate("/admin");
-    }
-  }, [isAuthenticated, navigate]);
+    if (!loading && isAuthenticated) navigate("/admin");
+  }, [isAuthenticated, loading, navigate]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const success = login(password);
-    
-    if (success) {
-      toast({
-        title: "Login Successful",
-        description: "Welcome to the admin panel!",
-      });
+    setSubmitting(true);
+    const res = await login(email.trim(), password);
+    setSubmitting(false);
+
+    if (res.ok) {
+      toast({ title: "Login Successful", description: "Welcome to the admin panel!" });
       navigate("/admin");
     } else {
       toast({
         title: "Login Failed",
-        description: "Invalid password. Please try again.",
+        description: res.error || "Invalid credentials.",
         variant: "destructive",
       });
       setPassword("");
@@ -48,31 +47,48 @@ const AdminLogin = () => {
             <img src={logo} alt="Logo" className="w-20 h-20 rounded-full object-cover" />
           </div>
           <CardTitle className="text-2xl">Admin Login</CardTitle>
-          <CardDescription>
-            Enter your password to access the admin panel
-          </CardDescription>
+          <CardDescription>Sign in with your admin account</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium text-foreground">
-                Password
-              </label>
+              <label htmlFor="email" className="text-sm font-medium">Email</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="admin@example.com"
+                  className="pl-10"
+                  required
+                  autoComplete="email"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="password" className="text-sm font-medium">Password</label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   id="password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter admin password"
+                  placeholder="Enter password"
                   className="pl-10"
                   required
+                  autoComplete="current-password"
                 />
               </div>
             </div>
-            <Button type="submit" className="w-full" size="lg">
-              Login
+            <Button type="submit" className="w-full" size="lg" disabled={submitting}>
+              {submitting ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Signing in...</>
+              ) : (
+                "Login"
+              )}
             </Button>
           </form>
         </CardContent>

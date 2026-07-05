@@ -21,28 +21,31 @@ interface AdminLayoutProps {
 }
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
-  const { logout } = useAdmin();
+  const { logout, user, role } = useAdmin();
   const navigate = useNavigate();
   const location = useLocation();
 
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate("/admin/login");
   };
 
-  const navItems = [
-    { name: "Dashboard", path: "/admin", icon: Home },
-    { name: "Add Certificate", path: "/admin/ManageCertificates", icon: Briefcase },
-    { name: "Add Offer Letter", path: "/admin/ManageOffers", icon: Briefcase },
-    { name: "Services", path: "/admin/services", icon: Briefcase },
-    { name: "Projects", path: "/admin/projects", icon: FolderKanban },
-    { name: "Team", path: "/admin/team", icon: Users },
-    { name: "Testimonials", path: "/admin/testimonials", icon: Star },
-    { name: "Form Submissions", path: "/admin/submissions", icon: MessageSquare },
-    { name: "Website Settings", path: "/admin/website", icon: Settings },
+  const allNavItems = [
+    { name: "Dashboard", path: "/admin", icon: Home, roles: ["superadmin", "admin", "editor"] },
+    { name: "Add Certificate", path: "/admin/ManageCertificates", icon: Briefcase, roles: ["superadmin"] },
+    { name: "Offer Letter", path: "/admin/ManageOffers", icon: Briefcase, roles: ["superadmin"] },
+    { name: "Coupons", path: "/admin/ManageCoupons", icon: Star, roles: ["superadmin"] },
+    { name: "Services", path: "/admin/services", icon: Briefcase, roles: ["superadmin"] },
+    { name: "Projects", path: "/admin/projects", icon: FolderKanban, roles: ["superadmin"] },
+    { name: "Team", path: "/admin/team", icon: Users, roles: ["superadmin"] },
+    { name: "Testimonials", path: "/admin/testimonials", icon: Star, roles: ["superadmin"] },
+    { name: "Form Submissions", path: "/admin/submissions", icon: MessageSquare, roles: ["superadmin"] },
+    { name: "Website Settings", path: "/admin/website", icon: Settings, roles: ["superadmin"] },
   ];
+
+  const navItems = allNavItems.filter((item) => role && item.roles.includes(role));
 
   const SidebarContent = () => (
     <nav className="p-4 space-y-2">
@@ -96,11 +99,23 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
               </span>
             </div>
 
-            {/* Logout */}
-            <Button onClick={handleLogout} variant="outline" size="sm">
-              <LogOut className="w-4 h-4 mr-2" />
-              Logout
-            </Button>
+            {/* User info + Logout */}
+            <div className="flex items-center gap-3">
+              {user && (
+                <div className="hidden sm:flex flex-col items-end leading-tight">
+                  <span className="text-xs font-medium truncate max-w-[160px]">{user.email}</span>
+                  {role && (
+                    <span className="text-[10px] uppercase tracking-wide text-primary font-semibold">
+                      {role}
+                    </span>
+                  )}
+                </div>
+              )}
+              <Button onClick={handleLogout} variant="outline" size="sm">
+                <LogOut className="w-4 h-4 mr-2" />
+                Logout
+              </Button>
+            </div>
           </div>
         </div>
       </header>
